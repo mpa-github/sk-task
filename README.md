@@ -8,6 +8,7 @@ Java version "17", Spring Boot version 3.0.0, PosgreSQL version 15.1<br/>
 ___
 ### How to use?
 * Clone repository.
+* Update Maven dependencies.
 * Start PostgreSQL Server and create database with parameters:
   - dropdb --if-exists sk_example_db
   - dropuser --if-exists sk_example_user
@@ -17,6 +18,7 @@ ___
   - INSERT INTO sk_example_table (obj) VALUES ('{"current":0}'::JSONB);
 * Check spring connection property: "spring.datasource.url=jdbc:postgresql://localhost:5432/sk_example_db"
 * Check spring.datasource.username&password settings.
+* Run SkTaskApplication.java
 
 API endpoints (http://localhost:3001):<br/>
 * PUT /modify (increase json 'current' attribute value by 'add' value)<br/>
