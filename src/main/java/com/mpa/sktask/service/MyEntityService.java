@@ -7,6 +7,7 @@ import com.mpa.sktask.exception.EntityNotFoundException;
 import com.mpa.sktask.repository.MyEntityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -27,7 +28,8 @@ public class MyEntityService {
         return entity;
     }
 
-    @Transactional
+    // REPEATABLE_READ does not allow simultaneous access to a row.
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public MyEntity updateEntity(ModifyRequestDTO requestDTO) {
         Long id = requestDTO.getId();
         int increaseBy = requestDTO.getAdd();
