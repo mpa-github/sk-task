@@ -4,8 +4,8 @@ import com.mpa.sktask.domain.dto.ModifyRequestDTO;
 import com.mpa.sktask.domain.model.MyEntity;
 import com.mpa.sktask.domain.pojo.MyJsonb;
 import com.mpa.sktask.exception.EntityNotFoundException;
-import com.mpa.sktask.repository.MyEntityRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.mpa.sktask.exception.ResponseTimeOutException;
+import jakarta.persistence.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,34 +13,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class MyEntityService {
 
-    private final MyEntityRepository myEntityRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
-    @Autowired
-    public MyEntityService(MyEntityRepository myEntityRepository) {
-        this.myEntityRepository = myEntityRepository;
-    }
-
-    public MyEntity getEntity(Long id) {
-        MyEntity entity = myEntityRepository.findMyEntityById(id);
-        if (entity == null) {
-            throw new EntityNotFoundException("Entity not found id: "  + id);
-        }
-        return entity;
-    }
-
-    // REPEATABLE_READ does not allow simultaneous access to a row.
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public MyEntity updateEntity(ModifyRequestDTO requestDTO) {
         Long id = requestDTO.getId();
         int increaseBy = requestDTO.getAdd();
-        MyEntity entity = myEntityRepository.findMyEntityById(id);
-        if (entity == null) {
-            throw new EntityNotFoundException("Entity not found id: "  + id);
+        try {
+            MyEntity entity = entityManager.find(MyEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+            if (entity == null) {
+                throw new EntityNotFoundException("Entity not found id: " + id);
+            }
+            MyJsonb jsonb = entity.getJsonb();
+            int currentValue = jsonb.getCurrent();
+            jsonb.setCurrent(currentValue + increaseBy);
+            entity.setJsonb(jsonb);
+            return entity;
+        } catch (LockTimeoutException ex) {
+            throw new ResponseTimeOutException(ex.getMessage());
         }
-        MyJsonb jsonb = entity.getJsonb();
-        int currentValue = jsonb.getCurrent();
-        jsonb.setCurrent(currentValue + increaseBy);
-        entity.setJsonb(jsonb);
-        return entity;
     }
 }
